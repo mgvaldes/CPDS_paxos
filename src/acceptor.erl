@@ -1,8 +1,10 @@
 -module(acceptor).
 -export([start/2]).
+-define(delay, 20).
 
 start(Name, PanelId) ->
 	spawn(fun() -> init(Name, PanelId) end).
+
 init(Name, PanelId) ->
 	{A1,A2,A3} = now(),
 	random:seed(A1, A2, A3),
@@ -14,6 +16,9 @@ init(Name, PanelId) ->
 acceptor(Name, Promised, Voted, Value, PanelId) ->
 	receive
 		{prepare, Proposer, Round} ->
+      R = random:uniform(?delay),
+      io:format("[Acceptor ~w] delaying prepare msg~n", [Name]),
+      timer:sleep(R),
 			case order:gr(Round, Promised) of
 				true ->
 					Proposer ! {promise, Round, Voted, Value},
@@ -32,6 +37,9 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
 					acceptor(Name, Promised, Voted, Value, PanelId)
 			end;
 		{accept, Proposer, Round, Proposal} ->
+      R = random:uniform(?delay),
+      io:format("[Acceptor ~w] delaying accept msg~n", [Name]),
+      timer:sleep(R),
 			case order:goe(Round, Promised) of
 				true ->
 					Proposer ! {vote, Round},

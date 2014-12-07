@@ -11,8 +11,8 @@ start(Sleep) ->
 	ProposerNames = ["Proposer 1", "Proposer 2", "Proposer 3"],
 	PropInfo = [{kurtz, ?RED}, {kilgore, ?GREEN}, {willard, ?BLUE}],
 	% computing panel heights
-	AccPanelHeight = length(AcceptorNames)*50 + 20, %plus the spacer value
-	PropPanelHeight = length(ProposerNames)*50 + 20,
+	AccPanelHeight = length(AcceptorNames)*50 + 0, %plus the spacer value
+	PropPanelHeight = length(ProposerNames)*50 + 0,
 	register(gui, spawn(fun() -> gui:start(AcceptorNames, ProposerNames,AccPanelHeight, PropPanelHeight) end)),
 	gui ! {reqState, self()},
 	receive
@@ -20,8 +20,7 @@ start(Sleep) ->
 			{AccIds, PropIds} = State,
 			start_acceptors(AccIds, AccRegister),
 			start_proposers(PropIds, PropInfo, AccRegister, Sleep)
-	end,
-	true.
+	end.
 	
 start_acceptors(AccIds, AccReg) ->
 	case AccIds of
