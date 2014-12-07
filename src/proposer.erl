@@ -20,7 +20,6 @@ round(Name, Backoff, Round, Proposal, Acceptors, PanelId) ->
 	PanelId ! {updateProp, "Round: " ++ lists:flatten(io_lib:format("~p", [Round])), "Proposal: " ++ lists:flatten(io_lib:format("~p", [Proposal])), Proposal},
 	case ballot(Name, Round, Proposal, Acceptors, PanelId) of
 		{ok, Decision} ->
-			io:format("[Proposer ~w] ~w decided ~w in round ~w~n", [Name, Acceptors, Decision, Round]),
 			{ok, Decision};
 		abort ->
 			timer:sleep(random:uniform(Backoff)),
@@ -32,14 +31,16 @@ ballot(Name, Round, Proposal, Acceptors, PanelId) ->
 	prepare(Round, Acceptors),
 	Quorum = (length(Acceptors) div 2) + 1,
 	Max = order:null(),
-	case collect(Quorum, Round, Max, Proposal) of
-		{accepted, Value} ->
+	case collect(Quorum, Round, Max, Proposal, Name, []) of
+		{accepted, Value, AgreedPromiseAcceptors} ->
 			% update gui
+      io:format("[Proposer ~w] ~w acceptors promised ~w in round ~w~n", [Name, AgreedPromiseAcceptors, Value, Round]),
 			io:format("[Proposer ~w] Phase 2: round ~w proposal ~w~n", [Name, Round, Value]),
 			PanelId ! {updateProp, "Round: " ++ lists:flatten(io_lib:format("~p", [Round])), "Proposal: " ++ lists:flatten(io_lib:format("~p", [Value])), Value},
 			accept(Round, Value, Acceptors),
-			case vote(Quorum, Round) of
-				ok ->
+			case vote(Quorum, Round, Name, []) of
+        {ok, AgreedVoteAcceptors} ->
+          io:format("[Proposer ~w] ~w acceptors voted ~w in round ~w~n", [Name, AgreedVoteAcceptors, Value, Round]),
 					{ok, Value};
 				abort ->
 					abort
@@ -48,41 +49,51 @@ ballot(Name, Round, Proposal, Acceptors, PanelId) ->
 			abort
 	end.
 
-collect(0, _, _, Proposal) ->
-	{accepted, Proposal};
-collect(N, Round, MaxVoted, Proposal) ->
+collect(0, _, _, Proposal, _, Acceptors) ->
+	{accepted, Proposal, Acceptors};
+
+collect(N, Round, MaxVoted, Proposal, Name, Acceptors) ->
 	receive
-		{promise, Round, _, na} ->
-			collect(N-1, Round, MaxVoted, Proposal);
-		{promise, Round, Voted, Value} ->
+		{promise, Round, _, na, Acceptor} ->
+			collect(N-1, Round, MaxVoted, Proposal, Name, Acceptors ++ [Acceptor]);
+		{promise, Round, Voted, Value, Acceptor} ->
 			case order:gr(Voted, MaxVoted) of
 				true ->
-					collect(N, Round, Voted, Value);
+          io:format("[Proposer ~w] voted ~w gr than maxvoted ~w, update with value: ~w rather than proposal ~w~n", [Name, Voted, MaxVoted, Value, Proposal]),
+					collect(N, Round, Voted, Value, Name, Acceptors);
 				false ->
-					collect(N-1, Round, MaxVoted, Proposal)
+          io:format("[Proposer ~w] voted ~w NOOOOOT gr than maxvoted ~w, update with value: ~w rather than proposal ~w~n", [Name, Voted, MaxVoted, Proposal, Value]),
+					collect(N-1, Round, MaxVoted, Proposal, Name, Acceptors ++ [Acceptor])
 			end;
-		{promise, _, _, _} ->
-			collect(N, Round, MaxVoted, Proposal);
-		{sorry, {prepare, Round}} ->
-			collect(N, Round, MaxVoted, Proposal);
-		{sorry, _} ->
-			collect(N, Round, MaxVoted, Proposal)
+		{promise, _, _, _, _} ->
+      io:format("[Proposer ~w] Collect: round ~w received OLD PROMISE~n", [Name, Round]),
+			collect(N, Round, MaxVoted, Proposal, Name, Acceptors);
+		{sorry, {prepare, Round}, Acceptor} ->
+      io:format("[Proposer ~w] Collect: round ~w received sorry PREPARE from ~w~n", [Name, Round, Acceptor]),
+			collect(N, Round, MaxVoted, Proposal, Name, Acceptors);
+		{sorry, _, _} ->
+      io:format("[Proposer ~w] Collect: round ~w received OLD sorry PREPARE~n", [Name, Round]),
+			collect(N, Round, MaxVoted, Proposal, Name, Acceptors)
 	after ?timeout ->
+      io:format("[Proposer ~w] aborting collection of PROMISES in round ~w~n", [Name, Round]),
 			abort
 	end.
 
-vote(0, _) ->
-	ok;
-vote(N, Round) ->
+vote(0, _, _, Acceptors) ->
+  {ok, Acceptors};
+vote(N, Round, Name, Acceptors) ->
 	receive
-		{vote, Round} ->
-			vote(N-1, Round);
+		{vote, Round, Acceptor} ->
+			vote(N-1, Round, Name, Acceptors ++ [Acceptor]);
 		{vote, _} ->
-			vote(N, Round);
-		{sorry, {accept, Round}} ->
-			vote(N, Round);
+      io:format("[Proposer ~w] Vote: round ~w received OLD VOTE~n", [Name, Round]),
+			vote(N, Round, Name, Acceptors);
+		{sorry, {accept, Round}, Acceptor} ->
+      io:format("[Proposer ~w] Vote: round ~w received sorry ACCEPT from ~w~n", [Name, Round, Acceptor]),
+			vote(N, Round, Name, Acceptors);
 		{sorry, _} ->
-			vote(N, Round)
+      io:format("[Proposer ~w] Vote: round ~w received OLD sorry ACCEPT~n", [Name, Round]),
+			vote(N, Round, Name, Acceptors)
 	after ?timeout ->
 			abort
 	end.
@@ -92,6 +103,7 @@ prepare(Round, Acceptors) ->
 		send(Acceptor, {prepare, self(), Round})
 	end,
 	lists:map(Fun, Acceptors).
+
 accept(Round, Proposal, Acceptors) ->
 	Fun = fun(Acceptor) ->
 		send(Acceptor, {accept, self(), Round, Proposal})

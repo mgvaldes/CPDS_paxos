@@ -2,7 +2,7 @@
 -export([start/4]).
 -include_lib("wx/include/wx.hrl").
 -define(WindowSize, {550, 600}).
--define(PanelSize, {140, 70}).
+-define(PanelSize, {140, 27}).
 -define(OuterSizerMinWidth, 250).
 -define(OuterSizerMaxHeight, 600). % maximum sizer size
 -define(InSizerMinWidth, 200).
