@@ -9,10 +9,14 @@
 
 % Sleep is a list with the initial sleep time for each proposer
 start(Sleep) ->
-	AcceptorNames = ["Acceptor 1", "Acceptor 2", "Acceptor 3", "Acceptor 4", "Acceptor 5", "Acceptor 6", "Acceptor 7", "Acceptor 8", "Acceptor 9", "Acceptor 10"],
-	AccRegister = [a, b, c, d, e, f, g, h, i, j],
-	ProposerNames = ["Proposer 1", "Proposer 2", "Proposer 3", "Proposer 4", "Proposer 5", "Proposer 6"],
-	PropInfo = [{kurtz, ?RED}, {kilgore, ?GREEN}, {willard, ?BLUE}, {kevin, ?YELLOW}, {max, ?PURPLE}, {jeffry, ?PINK}],
+%% 	AcceptorNames = ["Acceptor 1", "Acceptor 2", "Acceptor 3", "Acceptor 4", "Acceptor 5", "Acceptor 6", "Acceptor 7", "Acceptor 8", "Acceptor 9", "Acceptor 10"],
+  AcceptorNames = ["Acceptor 1", "Acceptor 2", "Acceptor 3", "Acceptor 4", "Acceptor 5"],
+%% 	AccRegister = [a, b, c, d, e, f, g, h, i, j],
+  AccRegister = [a, b, c, d, e],
+  ProposerNames = ["Proposer 1", "Proposer 2", "Proposer 3"],
+%% 	ProposerNames = ["Proposer 1", "Proposer 2", "Proposer 3", "Proposer 4", "Proposer 5", "Proposer 6"],
+  PropInfo = [{kurtz, ?RED}, {kilgore, ?GREEN}, {willard, ?BLUE}],
+%% 	PropInfo = [{kurtz, ?RED}, {kilgore, ?GREEN}, {willard, ?BLUE}, {kevin, ?YELLOW}, {max, ?PURPLE}, {jeffry, ?PINK}],
 	% computing panel heights
 	AccPanelHeight = length(AcceptorNames)*50 + 0, %plus the spacer value
 	PropPanelHeight = length(ProposerNames)*50 + 0,

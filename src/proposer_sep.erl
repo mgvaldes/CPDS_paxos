@@ -1,34 +1,34 @@
 -module(proposer_sep).
--export([start/5]).
+-export([start/6]).
 
 -define(timeout, 2000).
 -define(backoff, 10).
 
-start(Name, Proposal, Acceptors, Sleep, PanelId) ->
-	spawn(fun() -> init(Name, Proposal, Acceptors, Sleep, PanelId) end).
+start(Name, Proposal, Acceptors, Sleep, PanelId, AccepNode) ->
+	spawn(fun() -> init(Name, Proposal, Acceptors, Sleep, PanelId, AccepNode) end).
 
-init(Name, Proposal, Acceptors, Sleep, PanelId) ->
+init(Name, Proposal, Acceptors, Sleep, PanelId, AccepNode) ->
 	{A1,A2,A3} = now(),
 	random:seed(A1, A2, A3),
 	timer:sleep(Sleep),
 	Round = order_sep:null(Name),
-	round(Name, ?backoff, Round, Proposal, Acceptors, PanelId).
+	round(Name, ?backoff, Round, Proposal, Acceptors, PanelId, AccepNode).
 
-round(Name, Backoff, Round, Proposal, Acceptors, PanelId) ->
+round(Name, Backoff, Round, Proposal, Acceptors, PanelId, AccepNode) ->
 	% Update gui
 	io:format("[Proposer ~w] Phase 1: round ~w proposal ~w~n", [Name, Round, Proposal]),
 	PanelId ! {updateProp, "Round: " ++ lists:flatten(io_lib:format("~p", [Round])), "Proposal: " ++ lists:flatten(io_lib:format("~p", [Proposal])), Proposal},
-	case ballot(Name, Round, Proposal, Acceptors, PanelId) of
+	case ballot(Name, Round, Proposal, Acceptors, PanelId, AccepNode) of
 		{ok, Decision} ->
 			{ok, Decision};
 		abort ->
 			timer:sleep(random:uniform(Backoff)),
 			Next = order_sep:inc(Round),
-			round(Name, (2*Backoff), Next, Proposal, Acceptors, PanelId)
+			round(Name, (2*Backoff), Next, Proposal, Acceptors, PanelId, AccepNode)
 	end.
 
-ballot(Name, Round, Proposal, Acceptors, PanelId) ->
-	prepare(Round, Acceptors),
+ballot(Name, Round, Proposal, Acceptors, PanelId, AccepNode) ->
+	prepare(Round, Acceptors, AccepNode),
 	Quorum = (length(Acceptors) div 2) + 1,
 	Max = order_sep:null(),
 	case collect(Quorum, Round, Max, Proposal, Name, []) of
@@ -37,7 +37,7 @@ ballot(Name, Round, Proposal, Acceptors, PanelId) ->
       io:format("[Proposer ~w] ~w acceptors promised ~w in round ~w~n", [Name, AgreedPromiseAcceptors, Value, Round]),
 			io:format("[Proposer ~w] Phase 2: round ~w proposal ~w~n", [Name, Round, Value]),
 			PanelId ! {updateProp, "Round: " ++ lists:flatten(io_lib:format("~p", [Round])), "Proposal: " ++ lists:flatten(io_lib:format("~p", [Value])), Value},
-			accept(Round, Value, Acceptors),
+			accept(Round, Value, Acceptors, AccepNode),
 			case vote(Quorum, Round, Name, []) of
         {ok, AgreedVoteAcceptors} ->
           io:format("[Proposer ~w] ~w acceptors voted ~w in round ~w~n", [Name, AgreedVoteAcceptors, Value, Round]),
@@ -98,17 +98,17 @@ vote(N, Round, Name, Acceptors) ->
 			abort
 	end.
 
-prepare(Round, Acceptors) ->
+prepare(Round, Acceptors, AccepNode) ->
 	Fun = fun(Acceptor) ->
-		send(Acceptor, {prepare, self(), Round})
+		send(Acceptor, {prepare, self(), Round}, AccepNode)
 	end,
 	lists:map(Fun, Acceptors).
 
-accept(Round, Proposal, Acceptors) ->
+accept(Round, Proposal, Acceptors, AccepNode) ->
 	Fun = fun(Acceptor) ->
-		send(Acceptor, {accept, self(), Round, Proposal})
+		send(Acceptor, {accept, self(), Round, Proposal}, AccepNode)
 	end,
 	lists:map(Fun, Acceptors).
 
-send(Name, Message) ->
-	Name ! Message.
+send(Name, Message, AccepNode) ->
+  {Name, AccepNode} ! Message.

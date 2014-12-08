@@ -1,7 +1,7 @@
 -module(gui_sep).
 %% -export([start/4]).
 -export([start_acceptors/2]).
--export([start_proposers/3]).
+-export([start_proposers/2]).
 -include_lib("wx/include/wx.hrl").
 -define(WindowSize, {550, 600}).
 -define(PanelSize, {140, 27}).
@@ -24,9 +24,9 @@ start_acceptors(Acceptors, AccPanelHeight) ->
   State = make_window_acceptos(Acceptors, AccPanelHeight),
   gui_acceptors(State).
 
-start_proposers(Proposers, PropPanelHeight, PropNode) ->
+start_proposers(Proposers, PropPanelHeight) ->
   State = make_window_proposers(Proposers, PropPanelHeight),
-  gui_proposers(State, PropNode).
+  gui_proposers(State).
 
 make_window_acceptos(Acceptors, AccPanelHeight) ->
   Server = wx:new(),
@@ -199,14 +199,14 @@ gui_acceptors(State) ->
       gui_acceptors(State)
   end.
 
-gui_proposers(State, PropNode) ->
+gui_proposers(State) ->
   {Frame, PropIds} = State,
   receive
   % request State
-    {reqStateProp} ->
+    {reqStateProp, From} ->
       io:format("[Gui Proposers] State requested~n", []),
-      {proposers, PropNode} ! {reqStateProp, {PropIds}},
-      gui_proposers(State, PropNode);
+      From ! {reqStateProp, {PropIds}},
+      gui_proposers(State);
 
   % a connection gets the close_window signal
   % and sends this message to the server
@@ -221,7 +221,7 @@ gui_proposers(State, PropNode) ->
     Msg ->
       %Everything else ends up here
       io:format("loop default triggered: Got ~n ~p ~n", [Msg]),
-      gui_proposers(State, PropNode)
+      gui_proposers(State)
   end.
 
 %% gui(State) ->

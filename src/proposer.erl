@@ -59,10 +59,10 @@ collect(N, Round, MaxVoted, Proposal, Name, Acceptors) ->
 		{promise, Round, Voted, Value, Acceptor} ->
 			case order:gr(Voted, MaxVoted) of
 				true ->
-          io:format("[Proposer ~w] voted ~w gr than maxvoted ~w, update with value: ~w rather than proposal ~w~n", [Name, Voted, MaxVoted, Value, Proposal]),
+%%           io:format("[Proposer ~w] voted ~w gr than maxvoted ~w, update with value: ~w rather than proposal ~w~n", [Name, Voted, MaxVoted, Value, Proposal]),
 					collect(N, Round, Voted, Value, Name, Acceptors);
 				false ->
-          io:format("[Proposer ~w] voted ~w NOOOOOT gr than maxvoted ~w, update with value: ~w rather than proposal ~w~n", [Name, Voted, MaxVoted, Proposal, Value]),
+%%           io:format("[Proposer ~w] voted ~w NOOOOOT gr than maxvoted ~w, update with value: ~w rather than proposal ~w~n", [Name, Voted, MaxVoted, Proposal, Value]),
 					collect(N-1, Round, MaxVoted, Proposal, Name, Acceptors ++ [Acceptor])
 			end;
 		{promise, _, _, _, _} ->
