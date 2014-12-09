@@ -4,6 +4,7 @@
 -define(drop, 10).
 
 start(Name, PanelId) ->
+	io:format("starting acceptor ~w~n", [Name]),
 	spawn(fun() -> init(Name, PanelId) end).
 
 init(Name, PanelId) ->
@@ -17,9 +18,9 @@ init(Name, PanelId) ->
 acceptor(Name, Promised, Voted, Value, PanelId) ->
 	receive
 		{prepare, Proposer, Round} ->
-      %R = random:uniform(?delay),
-      %io:format("[Acceptor ~w] delaying prepare msg~n", [Name]),
-      %timer:sleep(R),
+      R = random:uniform(?delay),
+      io:format("[Acceptor ~w] delaying prepare msg~n", [Name]),
+      timer:sleep(R+800),
 			case order_sep:gr(Round, Promised) of
 				true ->
 %%           case random:uniform(?drop) of
@@ -44,9 +45,9 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
 					acceptor(Name, Promised, Voted, Value, PanelId)
 			end;
 		{accept, Proposer, Round, Proposal} ->
-      %R = random:uniform(?delay),
-      %io:format("[Acceptor ~w] delaying accept msg~n", [Name]),
-      %timer:sleep(R),
+      R = random:uniform(?delay),
+      io:format("[Acceptor ~w] delaying accept msg~n", [Name]),
+      timer:sleep(R+800),
 			case order_sep:goe(Round, Promised) of
 				true ->
 %%           case random:uniform(?drop) of

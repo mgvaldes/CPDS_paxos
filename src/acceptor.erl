@@ -1,9 +1,10 @@
 -module(acceptor).
 -export([start/2]).
 -define(delay, 20).
--define(drop, 10).
+-define(drop, 0).
 
 start(Name, PanelId) ->
+	io:format("starting acceptor ~w~n", [Name]),
 	spawn(fun() -> init(Name, PanelId) end).
 
 init(Name, PanelId) ->
@@ -22,17 +23,17 @@ init(Name, PanelId) ->
 acceptor(Name, Promised, Voted, Value, PanelId) ->
 	receive
 		{prepare, Proposer, Round} ->
-      R = random:uniform(?delay),
-      io:format("[Acceptor ~w] delaying prepare msg~n", [Name]),
-      timer:sleep(R),
+      %R = random:uniform(?delay),
+      %io:format("[Acceptor ~w] delaying prepare msg~n", [Name]),
+      %timer:sleep(R),
 			case order:gr(Round, Promised) of
 				true ->
-%%           case random:uniform(?drop) of
-%%             ?drop ->
-%%               io:format("----------------------[Acceptor ~w] Phase 1: PROMISE message dropped in round ~w~n", [Name, Round]);
-%%             _ ->
-%%               Proposer ! {promise, Round, Voted, Value, Name}
-%%           end,
+           case random:uniform(?drop) of
+             ?drop ->
+               io:format("----------------------[Acceptor ~w] Phase 1: PROMISE message dropped in round ~w~n", [Name, Round]);
+             _ ->
+               Proposer ! {promise, Round, Voted, Value, Name}
+           end,
 					Proposer ! {promise, Round, Voted, Value, Name},
 					% Update gui
 					if
@@ -49,17 +50,17 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
 					acceptor(Name, Promised, Voted, Value, PanelId)
 			end;
 		{accept, Proposer, Round, Proposal} ->
-      R = random:uniform(?delay),
-      io:format("[Acceptor ~w] delaying accept msg~n", [Name]),
-      timer:sleep(R),
+      %R = random:uniform(?delay),
+      %io:format("[Acceptor ~w] delaying accept msg~n", [Name]),
+      %timer:sleep(R),
 			case order:goe(Round, Promised) of
 				true ->
-%%           case random:uniform(?drop) of
-%%             ?drop ->
-%%               io:format("----------------------[Acceptor ~w] Phase 1: VOTE message dropped in round ~w~n", [Name, Round]);
-%%             _ ->
-%%               Proposer ! {vote, Round, Name}
-%%           end,
+           case random:uniform(?drop) of
+             ?drop ->
+               io:format("----------------------[Acceptor ~w] Phase 1: VOTE message dropped in round ~w~n", [Name, Round]);
+             _ ->
+               Proposer ! {vote, Round, Name}
+           end,
 					Proposer ! {vote, Round, Name},
 					case order:goe(Round, Voted) of
 						true ->

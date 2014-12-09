@@ -114,6 +114,7 @@ crash(Name) ->
     undefined ->
       ok;
     Pid ->
+      io:format("crashing acceptor ~w~n", [Name]),
       unregister(Name),
       exit(Pid, "crash"),
       register(Name, acceptor:start(Name, na))

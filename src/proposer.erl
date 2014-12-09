@@ -71,9 +71,9 @@ collect(N, Round, MaxVoted, Proposal, Name, Acceptors, S) ->
 		{sorry, {prepare, Round}, Acceptor} ->
       		io:format("[Proposer ~w] Collect: round ~w received sorry PREPARE from ~w~n", [Name, Round, Acceptor]),
 			io:format("sorry msg: ~w~n", [S]),
-			case (S+1) >= 3 of
+			case (S+1) >= 2 of
 				true ->
-					io:format("more than 3 sorry msg we abort"),
+					io:format("more than 3 sorry msg we abort~n"),
 					abort;
 				false ->
 					collect(N, Round, MaxVoted, Proposal, Name, Acceptors, S+1)
@@ -81,9 +81,9 @@ collect(N, Round, MaxVoted, Proposal, Name, Acceptors, S) ->
 		{sorry, _, _} ->
       		io:format("[Proposer ~w] Collect: round ~w received OLD sorry PREPARE~n", [Name, Round]),
 			io:format("sorry msg: ~w~n", [S]),
-			case (S+1) >= 3 of
+			case (S+1) >= 2 of
 				true ->
-					io:format("more than 3 sorry msg we abort"),
+					io:format("more than 3 sorry msg we abort~n"),
 					abort;
 				false ->
 					collect(N, Round, MaxVoted, Proposal, Name, Acceptors, S+1)
@@ -105,9 +105,9 @@ vote(N, Round, Name, Acceptors, S) ->
 		{sorry, {accept, Round}, Acceptor} ->
       		io:format("[Proposer ~w] Vote: round ~w received sorry ACCEPT from ~w~n", [Name, Round, Acceptor]),
 			io:format("sorry msg: ~w~n", [S]),
-			case (S+1) >= 3 of
+			case (S+1) >= 2 of
 				true ->
-					io:format("more than 3 sorry msg we abort"),
+					io:format("more than 3 sorry msg we abort~n"),
 					abort;
 				false ->
 					vote(N, Round, Name, Acceptors, S+1)
@@ -115,9 +115,9 @@ vote(N, Round, Name, Acceptors, S) ->
 		{sorry, _} ->
       		io:format("[Proposer ~w] Vote: round ~w received OLD sorry ACCEPT~n", [Name, Round]),
 			io:format("sorry msg: ~w~n", [S]),
-			case (S+1) >= 3 of
+			case (S+1) >= 2 of
 				true ->
-					io:format("more than 3 sorry msg we abort"),
+					io:format("more than 3 sorry msg we abort~n"),
 					abort;
 				false ->
 					vote(N, Round, Name, Acceptors, S+1)
