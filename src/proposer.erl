@@ -110,5 +110,13 @@ accept(Round, Proposal, Acceptors) ->
 	end,
 	lists:map(Fun, Acceptors).
 
+%% send(Name, Message) ->
+%% 	Name ! Message.
+
 send(Name, Message) ->
-	Name ! Message.
+  case whereis(Name) of
+    undefined ->
+      down;
+    Pid ->
+      Pid ! Message
+  end.
